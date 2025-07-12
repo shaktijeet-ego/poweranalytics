@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Region, Province, Branch , Outlet, Host
+from .models import Region, Province, Branch , Outlet, Host, PowerInfo
 from django.http import HttpResponse
 import csv
 
@@ -34,7 +34,7 @@ class OutletAdmin(admin.ModelAdmin):
 
 
 class HostAdmin(admin.ModelAdmin):
-    list_display = ('host_id', 'host_name', 'outlet', 'get_branch', 'get_region')
+    list_display = ('host_id', 'host_name', 'host_type','outlet', 'get_branch', 'get_region')
     actions = [export_to_csv]
 
     def get_branch(self, obj):
@@ -45,10 +45,53 @@ class HostAdmin(admin.ModelAdmin):
         return obj.outlet.branch.region.region_name
     get_region.short_description = 'Region'
 
+class PowerAdmin(admin.ModelAdmin):
+    list_display = (
+        'power_id',
+        'get_host_name',
+        'get_host_type',
+        'get_outlet',
+        'get_branch',
+        'get_region',
+        'no_of_batteries',
+        'damaged_batteries',
+        'last_installed',
+        'backup_duration',
+        'solar_available',
+        'generator_available',
+        'last_maintainance_date',
+        'ups_status',
+        'batteries_changed',
+        'no_of_batteries_changed',
+        'changed_date',
+    )
+    actions = [export_to_csv]
+
+    def get_host_name(self, obj):
+        return obj.host.host_name
+    get_host_name.short_description = 'Host Name'
+
+    def get_host_type(self, obj):
+        return obj.host.host_type
+    get_host_type.short_description = 'Host Type'
+
+    def get_outlet(self, obj):
+        return obj.host.outlet.outlet_name
+    get_outlet.short_description = 'Outlet'
+
+    def get_branch(self, obj):
+        return obj.host.outlet.branch.branch_name
+    get_branch.short_description = 'Branch'
+
+    def get_region(self, obj):
+        return obj.host.outlet.branch.region.region_name
+    get_region.short_description = 'Region'
+
 admin.site.register(Branch, BranchAdmin)
 admin.site.register(Region)
 admin.site.register(Province)
 admin.site.register(Outlet,OutletAdmin)
 admin.site.register(Host,HostAdmin)
+admin.site.register(PowerInfo, PowerAdmin)
 
 

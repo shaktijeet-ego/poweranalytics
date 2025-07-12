@@ -1,32 +1,77 @@
-from .forms import HostForm
-from django.shortcuts import render,get_object_or_404, redirect
-from .models import Region,Branch,Outlet,Host
-from django.db.models import Count
+from django.shortcuts import render, get_object_or_404, redirect
+from django.db.models import Count, Q
+from django.core.paginator import Paginator
 from django.http import JsonResponse
+from django.template.loader import render_to_string
+
+from .forms import HostForm,PowerInfoForm
+from .models import Region, Branch, Outlet, Host, PowerInfo
+from datetime import date, timedelta
 
 
 def region_lists(request):
     regions = Region.objects.all()
     return render(request, 'hostinfos/region_lists.html', {'regions': regions})
 
-def home_view(request):
-    # Dashboard summary counts
-    region_count = Region.objects.count()
-    branch_count = Branch.objects.count()
-    outlet_count = Outlet.objects.count()
-    host_count = Host.objects.count()
 
-    # Get OLT count per region
+from datetime import date, timedelta
+
+def home_view(request):
+    region_count = Region.objects.exclude(region_name__in=["Unknown", "Test"]).count()
+    branch_count = Branch.objects.exclude(branch_name="NA").count()
+    outlet_count = Outlet.objects.exclude(outlet_name="NA").count()
+    host_count = Host.objects.filter(host_type='OLT').count()
+
+    # Chart data
     region_olt_data = (
         Region.objects
         .annotate(olt_count=Count('branch__outlet__host'))
-        .order_by('-olt_count')  # Sort by OLT count descending
+        .order_by('-olt_count')
         .values_list('region_name', 'olt_count')
     )
-
-    # Convert to 2 separate lists for Chart.js
     labels = [row[0] for row in region_olt_data]
     data = [row[1] for row in region_olt_data]
+
+    # Battery backup duration groups
+    duration_filters = [
+        ('≤ 30 minutes', timedelta(minutes=30)),
+        ('≤ 1 hour', timedelta(hours=1)),
+        ('≤ 1 hour 30 minutes', timedelta(hours=1, minutes=30)),
+        ('≤ 2 hours', timedelta(hours=2)),
+    ]
+    duration_groups = []
+    for label, max_duration in duration_filters:
+        powers = PowerInfo.objects.filter(backup_duration__lte=max_duration).select_related('host')
+        duration_groups.append({'label': label, 'powers': powers})
+
+    # Battery last installed age groups (non-overlapping)
+    today = date.today()
+    year_filters = [
+        ('> 3 years', timedelta(days=365*3)),
+        ('> 2 years', timedelta(days=365*2)),
+        ('> 1 year', timedelta(days=365)),
+    ]
+    already_included = set()
+    last_installed_groups = []
+
+    for label, min_age in year_filters:
+        cutoff_date = today - min_age
+        powers = (
+            PowerInfo.objects
+            .filter(last_installed__lte=cutoff_date)
+            .exclude(pk__in=already_included)
+            .select_related('host')
+        )
+        powers_with_age = []
+        for p in powers:
+            age_years = (today - p.last_installed).days // 365 if p.last_installed else None
+            powers_with_age.append({
+                'host': p.host,
+                'last_installed': p.last_installed,
+                'age_years': age_years,
+            })
+            already_included.add(p.pk)
+        last_installed_groups.append({'label': label, 'powers': powers_with_age})
 
     context = {
         'region_count': region_count,
@@ -35,24 +80,31 @@ def home_view(request):
         'host_count': host_count,
         'labels': labels,
         'data': data,
+        'duration_groups': duration_groups,
+        'last_installed_groups': last_installed_groups,
     }
+
     return render(request, 'hostinfos/home.html', context)
 
 
-
-from django.core.paginator import Paginator
-from django.db.models import Q
-
 def host_list_view(request):
     search_query = request.GET.get('search', '')
-    selected_region = request.GET.get('region', '')
-    selected_branch = request.GET.get('branch', '')
-    selected_outlet = request.GET.get('outlet', '')
+    # Convert to int or None to avoid filtering errors
+    try:
+        selected_region = int(request.GET.get('region', '') or 0)
+    except ValueError:
+        selected_region = 0
+    try:
+        selected_branch = int(request.GET.get('branch', '') or 0)
+    except ValueError:
+        selected_branch = 0
+    try:
+        selected_outlet = int(request.GET.get('outlet', '') or 0)
+    except ValueError:
+        selected_outlet = 0
 
     hosts = Host.objects.filter(is_deleted=False).select_related('outlet__branch__region')
 
-
-    # Filter by search text
     if search_query:
         hosts = hosts.filter(
             Q(host_name__icontains=search_query) |
@@ -61,24 +113,19 @@ def host_list_view(request):
             Q(outlet__branch__region__region_name__icontains=search_query)
         )
 
-    # Filter by Region
     if selected_region:
         hosts = hosts.filter(outlet__branch__region__region_id=selected_region)
 
-    # Filter by Branch
     if selected_branch:
         hosts = hosts.filter(outlet__branch__branch_id=selected_branch)
 
-    # Filter by Outlet
     if selected_outlet:
         hosts = hosts.filter(outlet__outlet_id=selected_outlet)
 
-    # Pagination
     paginator = Paginator(hosts, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    # Get all Regions, Branches, and Outlets for dropdowns
     regions = Region.objects.all()
     branches = Branch.objects.all()
     outlets = Outlet.objects.all()
@@ -96,15 +143,10 @@ def host_list_view(request):
     return render(request, 'hostinfos/host_list.html', context)
 
 
-
-from django.http import JsonResponse
-from django.template.loader import render_to_string
-
 def ajax_host_list(request):
     search_query = request.GET.get('search', '')
 
     hosts = Host.objects.filter(is_deleted=False).select_related('outlet__branch__region')
-
 
     if search_query:
         hosts = hosts.filter(
@@ -114,7 +156,6 @@ def ajax_host_list(request):
             Q(outlet__branch__region__region_name__icontains=search_query)
         )
 
-    # For live search, no pagination (or you can add later)
     html = render_to_string('hostinfos/host_table_rows.html', {'hosts': hosts})
 
     return JsonResponse({'html': html})
@@ -149,6 +190,7 @@ def deleted_hosts_view(request):
     deleted_hosts = Host.objects.filter(is_deleted=True).select_related('outlet__branch__region')
     return render(request, 'hostinfos/deleted_hosts.html', {'deleted_hosts': deleted_hosts})
 
+
 def recover_host_view(request, host_id):
     host = get_object_or_404(Host, pk=host_id, is_deleted=True)
 
@@ -158,3 +200,6 @@ def recover_host_view(request, host_id):
         return redirect('host_list')
 
     return render(request, 'hostinfos/host_confirm_recover.html', {'host': host})
+
+
+

@@ -1,7 +1,6 @@
 from django.urls import path
 from . import views
-from .views import region_lists,home_view
-from .views import host_edit_view
+from .views import region_lists, home_view
 
 urlpatterns = [
     #path('hosts/', views.host_list, name='host_list'),

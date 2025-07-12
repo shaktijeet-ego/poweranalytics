@@ -43,6 +43,79 @@
 <h3 class="mt-5">OLT Count by Region</h3>
 <canvas id="oltChart" width="100%" height="40"></canvas>
 
+<!-- Battery Backup Duration Section -->
+<h3 class="mt-5 mb-4">Hosts by Battery Backup Duration</h3>
+<div class="row">
+  {% for group in duration_groups %}
+    <div class="col-md-6 col-lg-3 mb-4">
+      <div class="card border-info shadow-sm h-100">
+        <div class="card-header bg-info text-white">
+          {{ group.label }}
+        </div>
+        <div class="card-body p-2">
+          {% if group.powers %}
+            <table class="table table-sm table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>Host Name</th>
+                  <th>Backup Duration</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for power in group.powers %}
+                  <tr>
+                    <td>{{ power.host.host_name }}</td>
+                    <td>{{ power.backup_duration }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% else %}
+            <p class="text-muted small mb-0 p-2">No hosts found.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+
+<!-- Battery Last Installed Age Section -->
+<h3 class="mt-5 mb-4">Hosts by Battery Last Installed Age</h3>
+<div class="row">
+  {% for group in last_installed_groups %}
+    <div class="col-md-6 col-lg-4 mb-4">
+      <div class="card border-warning shadow-sm h-100">
+        <div class="card-header bg-warning text-dark">
+          {{ group.label }}
+        </div>
+        <div class="card-body p-2">
+          {% if group.powers %}
+            <table class="table table-sm table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>Host Name</th>
+                  <th>Age (Years)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for power in group.powers %}
+                  <tr>
+                    <td>{{ power.host.host_name }}</td>
+                    <td>{{ power.age_years }} years</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% else %}
+            <p class="text-muted small mb-0 p-2">No hosts found.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     const ctx = document.getElementById('oltChart').getContext('2d');

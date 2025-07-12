@@ -1,0 +1,13 @@
+{% extends 'hostinfos/base.html' %}
+{% block title %}Recover Host{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+  <h2>Recover Host: {{ host.host_name }}</h2>
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-success">Yes, Recover</button>
+    <a href="{% url 'deleted_hosts' %}" class="btn btn-secondary">Cancel</a>
+  </form>
+</div>
+{% endblock %}

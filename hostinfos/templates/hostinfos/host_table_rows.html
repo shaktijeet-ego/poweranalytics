@@ -1,0 +1,14 @@
+{% for host in hosts %}
+<tr>
+  <td>{{ host.host_name }}</td>
+  <td>{{ host.outlet.outlet_name }}</td>
+  <td>{{ host.outlet.branch.branch_name }}</td>
+  <td>{{ host.outlet.branch.region.region_name }}</td>
+  <td>
+    <a href="{% url 'host_edit' host.host_id %}" class="btn btn-sm btn-primary">Edit</a>
+    <a href="{% url 'host_delete' host.host_id %}" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?');">Delete</a>
+  </td>
+</tr>
+{% empty %}
+<tr><td colspan="5" class="text-center">No hosts found.</td></tr>
+{% endfor %}

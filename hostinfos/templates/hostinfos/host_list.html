@@ -1,0 +1,58 @@
+{% extends 'hostinfos/base.html' %}
+
+{% block title %}Hosts List{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+
+  <h1>Hosts List</h1>
+
+  <!-- Search input -->
+  <div class="mb-3">
+    <input
+      type="text"
+      id="search-input"
+      class="form-control"
+      placeholder="Search hosts, outlets, branches, regions..."
+      autocomplete="off"
+    />
+  </div>
+
+  <table class="table table-striped table-hover table-bordered align-middle">
+    <thead class="table-dark">
+      <tr>
+        <th>Host Name</th>
+        <th>Outlet</th>
+        <th>Branch</th>
+        <th>Region</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="hosts-table-body">
+      {% include 'hostinfos/host_table_rows.html' with hosts=hosts %}
+    </tbody>
+  </table>
+
+</div>
+
+<script>
+  const searchInput = document.getElementById('search-input');
+  const tbody = document.getElementById('hosts-table-body');
+
+  let debounceTimer;
+  searchInput.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+
+    debounceTimer = setTimeout(() => {
+      const query = searchInput.value;
+
+      fetch(`{% url 'ajax_host_list' %}?search=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+          tbody.innerHTML = data.html;
+        })
+        .catch(err => console.error('Error fetching hosts:', err));
+    }, 300); // 300ms debounce
+  });
+</script>
+{% endblock %}

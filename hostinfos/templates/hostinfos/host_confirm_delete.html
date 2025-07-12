@@ -1,0 +1,14 @@
+{% extends 'hostinfos/base.html' %}
+{% block title %}Delete Host - {{ host.host_name }}{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+  <h2>Are you sure you want to delete host: {{ host.host_name }}?</h2>
+
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Yes, Delete</button>
+    <a href="{% url 'host_list' %}" class="btn btn-secondary">Cancel</a>
+  </form>
+</div>
+{% endblock %}

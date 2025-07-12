@@ -1,0 +1,76 @@
+{% extends 'hostinfos/base.html' %}
+
+{% block title %}Dashboard - Power Analytics{% endblock %}
+
+{% block content %}
+
+<!-- Existing summary cards -->
+<div class="row text-center">
+    <div class="col-md-3">
+        <div class="card shadow-sm border-primary mb-4">
+            <div class="card-body">
+                <h5 class="card-title text-primary">Regions</h5>
+                <h2>{{ region_count }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-success mb-4">
+            <div class="card-body">
+                <h5 class="card-title text-success">Branches</h5>
+                <h2>{{ branch_count }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-warning mb-4">
+            <div class="card-body">
+                <h5 class="card-title text-warning">Outlets</h5>
+                <h2>{{ outlet_count }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-danger mb-4">
+            <div class="card-body">
+                <h5 class="card-title text-danger">OLTs / Hosts</h5>
+                <h2>{{ host_count }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Chart -->
+<h3 class="mt-5">OLT Count by Region</h3>
+<canvas id="oltChart" width="100%" height="40"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('oltChart').getContext('2d');
+    const oltChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: {{ labels|safe }},
+            datasets: [{
+                label: 'OLT Count',
+                data: {{ data|safe }},
+                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                title: { display: true, text: 'OLTs per Region' }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { precision: 0 }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,54 @@
+<!-- hostinfos/templates/hostinfos/base.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}Power Analytics{% endblock %}</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body>
+  <!-- Header -->
+  <header class="bg-primary text-white p-3 mb-0">
+    <div class="container">
+      <h1>Power Analytics Dashboard</h1>
+    </div>
+  </header>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <div class="container">
+      <a class="navbar-brand" href="{% url 'home' %}">Dashboard</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'region_list' %}">Regions</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'host_list' %}">Hosts</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'deleted_hosts' %}">Deleted Hosts</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="container mb-5">
+    {% block content %}
+    {% endblock %}
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-dark text-white text-center p-3">
+    <small>&copy; 2025 PowerAnalytics. All rights reserved.</small>
+  </footer>
+
+  <!-- Bootstrap JS Bundle (for navbar toggler) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
